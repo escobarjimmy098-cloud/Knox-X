@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AnimeSAO Pro</title>
+    <meta name="description" content="AnimeSAO Pro es una PWA para explorar anime desde AnimeFLV con diseño móvil y reproductor integrado.">
+    <meta property="og:title" content="AnimeSAO Pro">
+    <meta property="og:description" content="Explora anime desde AnimeFLV con una interfaz moderna y optimizada para móvil.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="./">
+    <meta property="og:locale" content="es_ES">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0a0e27">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css?v=7">
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js').catch((err) => console.error('SW registration failed:', err));
+            });
+        }
+    </script>
+</head>
+<body>
+    <main id="app-container">
+        
+        <section id="view-home" class="view active">
+            <div class="content-scrollable" id="home-scroll">
+                <div id="continue-watching-container" class="continue-watching-section"></div>
+                <div id="home-toolbar" class="home-toolbar" aria-label="Filtros rápidos del inicio">
+                    <button class="home-chip active" data-home-filter="recommended">Para ti</button>
+                    <button class="home-chip" data-home-filter="latest">Nuevos</button>
+                    <button class="home-chip" data-home-filter="trending">Populares</button>
+                    <button class="home-chip" data-home-filter="action">Acción</button>
+                    <button class="home-chip" data-home-filter="comedy">Comedia</button>
+                    <button class="home-chip" data-home-filter="romance">Romance</button>
+                </div>
+                <div id="recommendations-container" class="home-personalized-container"></div>
+                <div id="home-content"></div>
+                <div id="home-loader" class="loader-modern">
+                    <div class="loader-spinner"></div>
+                    <p>Cargando catálogo...</p>
+                </div>
+                <div id="home-sentinel" class="sentinel" style="height: 1px; width: 100%;"></div>
+            </div>
+        </section>
+
+        <section id="view-category" class="view">
+            <header class="top-bar premium category-header">
+                <button class="btn-icon-nav btn-back" id="btn-back-category">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 19l-7-7 7-7"></path></svg>
+                </button>
+                <h2 id="category-title" class="category-title">Categoría</h2>
+                <div style="width:24px"></div>
+            </header>
+            <div class="content-scrollable" id="category-scroll">
+                <div class="grid" id="category-grid"></div>
+                <div id="category-loader" class="loader-modern">
+                    <div class="loader-spinner"></div>
+                </div>
+                <div id="category-sentinel" class="sentinel" style="height: 1px; width: 100%;"></div>
+            </div>
+        </section>
+
+        <section id="view-search" class="view">
+            <header class="top-bar premium search-header">
+                <div class="search-wrapper-header">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5" fill="none"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>
+                    <input type="text" id="search-input" placeholder="Buscar anime..." autocomplete="off">
+                    <button id="search-clear" class="btn-search-clear hidden">
+                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+            </header>
+            <div class="content-scrollable" id="search-scroll">
+                <div id="search-message" class="empty-state-premium">
+                    <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none" style="opacity:0.5"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>
+                    <p>Busca tu anime favorito</p>
+                </div>
+                <div class="grid" id="search-grid"></div>
+                <div id="search-loader" class="loader-modern hidden">
+                    <div class="loader-spinner"></div>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-library" class="view">
+            <header class="top-bar premium library-header">
+                <h2 class="library-title">Mi Biblioteca</h2>
+            </header>
+            <div class="content-scrollable">
+                <div class="grid" id="library-grid"></div>
+                <div id="library-empty" class="empty-state-premium">
+                    <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none" style="opacity:0.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    <p>Tu biblioteca está vacía</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="view-settings" class="view">
+            <header class="top-bar premium settings-header">
+                <h2 class="settings-title">Configuración</h2>
+            </header>
+            <div class="content-scrollable">
+                <div class="settings-list">
+                    <div class="setting-item" id="btn-clear-cache">
+                        <div class="setting-content">
+                            <span class="setting-label">Limpiar Datos Locales</span>
+                            <span class="setting-desc">Elimina biblioteca e historial</span>
+                        </div>
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </div>
+                    <div class="setting-item" id="btn-reset-recommendations">
+                        <div class="setting-content">
+                            <span class="setting-label">Reiniciar Recomendaciones</span>
+                            <span class="setting-desc">Borra perfil inteligente y reinicia sugerencias</span>
+                        </div>
+                        <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>
+                    </div>
+                    <div class="setting-info">
+                        <strong>AnimeSAO Pro v7</strong><br>
+                        <span>3.2.0 | Premium Experience</span>
+                    </div>
+                    <div class="setting-info setting-info-soft">
+                        <strong>Recomendaciones Inteligentes</strong><br>
+                        <span>70% explotación + 30% exploración. Se adapta a tus gustos con diversidad.</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="overlay-detail" class="overlay">
+        <button class="btn-close-overlay" id="btn-close-detail">
+            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2.5" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+        <div class="detail-scroll-container">
+            <div class="detail-header">
+                <div class="detail-backdrop" id="detail-backdrop"></div>
+                <div class="detail-cover-wrapper">
+                    <div class="detail-cover-container">
+                        <img id="detail-cover" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Cover" class="detail-cover">
+                        <div class="detail-cover-overlay"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="detail-content">
+                <div class="detail-loading" id="detail-loading">
+                    <div class="skeleton-pulse"></div>
+                    <div class="skeleton-pulse" style="width: 60%; margin-top: 12px;"></div>
+                </div>
+                <div id="detail-loaded" style="opacity: 0; transition: opacity 0.4s ease;">
+                    <div class="detail-title-section">
+                        <h1 id="detail-title" class="detail-title">Cargando...</h1>
+                        <div class="detail-meta-compact">
+                            <span id="detail-status" class="badge-status">Status</span>
+                            <button id="btn-library" class="btn-library-toggle">
+                                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="detail-genres" class="detail-genres-grid"></div>
+                    <p id="detail-synopsis" class="detail-synopsis"></p>
+                    <div class="episodes-section">
+                        <div class="episodes-header">
+                            <h3>Episodios</h3>
+                            <span class="ep-count" id="detail-ep-count">0</span>
+                        </div>
+                        <div id="detail-episodes" class="episodes-list-grid"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="overlay-player" class="overlay player-overlay">
+        <div class="player-header premium">
+            <button class="btn-icon-nav btn-back" id="btn-close-player">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 19l-7-7 7-7"></path></svg>
+            </button>
+            <div class="player-title-container">
+                <div id="player-title" class="player-title">Episodio</div>
+                <div id="player-episode-info" class="player-episode-info"></div>
+            </div>
+            <div style="width:24px"></div>
+        </div>
+        <div class="player-container-wrapper">
+            <div class="player-container" id="player-container">
+                <div id="player-loader" class="loader-modern-center">
+                    <div class="loader-spinner-large"></div>
+                    <p>Obteniendo video...</p>
+                </div>
+                <div class="player-error hidden" id="player-error">
+                    <div style="text-align: center;">
+                        <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none" style="opacity:0.6; margin: 0 auto 16px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <div class="error-message" style="font-size: 16px; color: #ff6b6b;"></div>
+                    </div>
+                    <button id="btn-retry" class="btn-retry-modern">Reintentar</button>
+                </div>
+                <iframe id="player-iframe" src="" allowfullscreen frameborder="0" style="width: 100%; height: 100%; position: absolute; top: 0; left: 0;"></iframe>
+            </div>
+        </div>
+        <div class="player-controls-advanced">
+            <div class="server-controls">
+                <label class="server-label">Servidor:</label>
+                <select id="server-selector" class="server-select-modern"></select>
+            </div>
+            <div class="ep-nav-modern">
+                <button id="btn-prev-ep" class="btn-nav-modern">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 19l-7-7 7-7"></path></svg>
+                    <span>Anterior</span>
+                </button>
+                <button id="btn-next-ep" class="btn-nav-modern">
+                    <span>Siguiente</span>
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5l7 7-7 7"></path></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav-premium">
+        <button class="nav-item-premium active" data-target="view-home">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+            <span>Inicio</span>
+        </button>
+        <button class="nav-item-premium" data-target="view-search">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <span>Buscar</span>
+        </button>
+        <button class="nav-item-premium" data-target="view-library">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+            <span>Librería</span>
+        </button>
+        <button class="nav-item-premium" data-target="view-settings">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            <span>Ajustes</span>
+        </button>
+    </nav>
+
+    <div id="toast" class="toast-premium"></div>
+    
+    <script src="script.js?v=7"></script>
+</body>
+</html>
